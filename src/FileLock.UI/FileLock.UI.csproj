@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>FileLock</AssemblyName>
+    <RootNamespace>FileLock.UI</RootNamespace>
+    <ApplicationIcon>..\..\FileLock.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FileLock.Core\FileLock.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,34 @@
+# .NET build output
+bin/
+obj/
+dist/
+publish/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.userprefs
+
+# NuGet
+*.nupkg
+project.lock.json
+.nuget/
+
+# Test results
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+
+# Windows shell cruft
+desktop.ini
+Thumbs.db
+
+# Editor / agent local config
+.vscode/
+.claude/

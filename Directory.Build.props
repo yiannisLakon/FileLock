@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Shared MSBuild settings for every project in the repo. Per-project files only need to
+    declare what's unique to them (target framework, output type, references).
+  -->
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Latest BCL analyzers, on by default for all projects. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Deterministic, reproducible builds. -->
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

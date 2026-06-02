@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net11.0-windows</TargetFramework>
+    <TargetFrameworks>net10.0-windows;net11.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
+    <!-- WinForms is enabled only for the tray-balloon NotifyIcon (no NuGet needed). -->
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>FileLock</AssemblyName>
     <RootNamespace>FileLock.UI</RootNamespace>
     <ApplicationIcon>..\..\FileLock.ico</ApplicationIcon>
@@ -11,6 +13,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FileLock.Core\FileLock.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Enabling WinForms adds System.Windows.Forms + System.Drawing to the global usings,
+       which collide with WPF's Brush / DragEventArgs / Application. Drop them from the
+       implicit set; the few WinForms/Drawing types we need are referenced explicitly
+       (via the WinForms alias) in App.xaml.cs. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
   </ItemGroup>
 
 </Project>

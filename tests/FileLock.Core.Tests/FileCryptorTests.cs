@@ -79,10 +79,9 @@ public sealed class FileCryptorTests : IDisposable
         string locked = input + FileFormat.LockedExtension;
         _cryptor.Lock(input, locked, "pw");
 
-        // Flip one byte well inside the ciphertext.
+        // Flip the last byte — guaranteed to be inside the ciphertext.
         byte[] bytes = File.ReadAllBytes(locked);
-        int i = FileFormat.HeaderSize + 100;
-        bytes[i] ^= 0xFF;
+        bytes[^1] ^= 0xFF;
         File.WriteAllBytes(locked, bytes);
 
         Assert.Throws<WrongPasswordException>(() => _cryptor.Unlock(locked, _dir, "pw"));
@@ -107,7 +106,7 @@ public sealed class FileCryptorTests : IDisposable
     public void Unlock_NonFileLockFile_ThrowsBadFormat()
     {
         // Plenty of bytes, but the magic is wrong.
-        string bogus = WriteInput("notlocked.locked", RandomBytes(FileFormat.HeaderSize + 50));
+        string bogus = WriteInput("notlocked.locked", RandomBytes(FileFormat.MinHeaderSize + 50));
         Assert.Throws<BadFormatException>(() => _cryptor.Unlock(bogus, _dir, "pw"));
     }
 
@@ -191,6 +190,92 @@ public sealed class FileCryptorTests : IDisposable
 
         Assert.True(File.Exists(input));
         Assert.Equal(original, File.ReadAllBytes(input));
+    }
+
+    // ── Detection + header peek ──────────────────────────────────────────────────
+
+    [Fact]
+    public void IsLocked_TrueForLocked_FalseForPlainAndShort()
+    {
+        string plain = WriteInput("plain.txt", RandomBytes(500));
+        Assert.False(FileCryptor.IsLocked(plain));
+
+        string locked = plain + FileFormat.LockedExtension;
+        _cryptor.Lock(plain, locked, "pw");
+        Assert.True(FileCryptor.IsLocked(locked));
+
+        string tiny = WriteInput("tiny.bin", RandomBytes(2)); // shorter than the magic
+        Assert.False(FileCryptor.IsLocked(tiny));
+    }
+
+    [Fact]
+    public void ReadHeaderInfo_ReturnsVersionDateAndUser()
+    {
+        string input = WriteInput("u.txt", RandomBytes(100));
+        string locked = input + FileFormat.LockedExtension;
+        _cryptor.Lock(input, locked, "pw", lockedBy: "alice");
+
+        LockedFileInfo info = FileCryptor.ReadHeaderInfo(locked);
+        Assert.Equal(FileFormat.Version, info.Version);
+        Assert.Equal("alice", info.LockedBy);
+        Assert.True((DateTimeOffset.UtcNow - info.LockedAtUtc).Duration() < TimeSpan.FromMinutes(5));
+    }
+
+    [Fact]
+    public void Lock_DefaultLockedBy_IsCurrentUser()
+    {
+        string input = WriteInput("d.txt", RandomBytes(64));
+        string locked = input + FileFormat.LockedExtension;
+        _cryptor.Lock(input, locked, "pw"); // no explicit lockedBy
+
+        Assert.Equal(Environment.UserName, FileCryptor.ReadHeaderInfo(locked).LockedBy);
+    }
+
+    [Fact]
+    public void Unlock_TamperedUsername_Throws()
+    {
+        string input = WriteInput("data.bin", RandomBytes(2048));
+        string locked = input + FileFormat.LockedExtension;
+        _cryptor.Lock(input, locked, "pw", lockedBy: "tamperme");
+
+        // The user name is part of the AAD, so mutating it must fail authentication.
+        byte[] bytes = File.ReadAllBytes(locked);
+        bytes[FileFormat.UsernameOffset] ^= 0x01;
+        File.WriteAllBytes(locked, bytes);
+
+        Assert.Throws<WrongPasswordException>(() => _cryptor.Unlock(locked, _dir, "pw"));
+    }
+
+    // ── In-place toggle ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void LockInPlace_UnlockInPlace_RoundTripsAtSamePath()
+    {
+        byte[] original = RandomBytes(20_000 + 5); // odd size, not a block multiple
+        string path = WriteInput("doc.dat", original);
+
+        _cryptor.LockInPlace(path, "pw");
+        Assert.True(FileCryptor.IsLocked(path));
+        Assert.NotEqual(original, File.ReadAllBytes(path)); // now ciphertext, same path
+
+        _cryptor.UnlockInPlace(path, "pw");
+        Assert.False(FileCryptor.IsLocked(path));
+        Assert.Equal(original, File.ReadAllBytes(path));
+    }
+
+    [Fact]
+    public void UnlockInPlace_WrongPassword_LeavesFileIntact()
+    {
+        byte[] original = RandomBytes(4096);
+        string path = WriteInput("keep.dat", original);
+        _cryptor.LockInPlace(path, "right");
+
+        byte[] lockedBytes = File.ReadAllBytes(path);
+        Assert.Throws<WrongPasswordException>(() => _cryptor.UnlockInPlace(path, "wrong"));
+
+        // Fail-closed: the locked file is byte-for-byte unchanged.
+        Assert.Equal(lockedBytes, File.ReadAllBytes(path));
+        Assert.True(FileCryptor.IsLocked(path));
     }
 
     /// <summary>True if <paramref name="needle"/> appears as a contiguous run in <paramref name="haystack"/>.</summary>

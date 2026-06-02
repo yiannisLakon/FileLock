@@ -142,3 +142,7 @@ The password is used for that run and, if no default is saved yet, stored as the
 for everyday interactive use.)
 
 Plain-language end-user instructions in Greek: [ΟΔΗΓΙΕΣ.pdf](ΟΔΗΓΙΕΣ.pdf).
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).

@@ -117,6 +117,9 @@ src/FileLock.UI/bin/Debug/net11.0-windows/FileLock.exe
    Desktop. (Optional: drop the shortcut into `shell:sendto` to get a "Send To → FileLock"
    entry.)
 
+You can skip the setup window: the **first time** you drop a file with no password saved,
+FileLock asks you to set one, saves it, then carries on.
+
 **Everyday use**
 
 - **Drag one or more files onto the shortcut.** Each file toggles in place — normal files
@@ -127,5 +130,15 @@ src/FileLock.UI/bin/Debug/net11.0-windows/FileLock.exe
 
 > The app folder must be **writable** (so it can store settings and backups). If you install
 > under `Program Files`, run it from a writable location instead, or it will report an error.
+
+**Automation / command line**
+
+```powershell
+FileLock.exe --password <pw> file1 file2 ...   # also: -p, --password=<pw>
+```
+
+The password is used for that run and, if no default is saved yet, stored as the default.
+(A password on the command line is visible to other processes — prefer the saved default
+for everyday interactive use.)
 
 Plain-language end-user instructions in Greek: [ΟΔΗΓΙΕΣ.pdf](ΟΔΗΓΙΕΣ.pdf).

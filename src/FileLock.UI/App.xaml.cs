@@ -28,9 +28,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // File paths handed over by a shortcut drop arrive as command-line args. Windows
-        // paths never start with '/' or '-', so anything that does is treated as a switch.
-        string[] files = e.Args.Where(a => !a.StartsWith('/') && !a.StartsWith('-')).ToArray();
+        (string[] files, string? cliPassword) = ParseArgs(e.Args);
 
         if (files.Length == 0)
         {
@@ -45,7 +43,7 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
-            RunHeadless(files);
+            RunHeadless(files, cliPassword);
         }
         catch (Exception ex)
         {
@@ -55,19 +53,58 @@ public partial class App : Application
         }
     }
 
-    private void RunHeadless(string[] files)
+    /// <summary>
+    /// Splits the command line into file paths and an optional password. Recognises
+    /// <c>--password &lt;pw&gt;</c> / <c>-p &lt;pw&gt;</c> and the <c>--password=&lt;pw&gt;</c> form.
+    /// Other switches (anything starting with <c>-</c> or <c>/</c>) are ignored; everything else
+    /// is treated as a file path. (Note: a password on the command line is visible to other
+    /// processes — prefer the stored default for interactive use.)
+    /// </summary>
+    private static (string[] files, string? password) ParseArgs(string[] args)
+    {
+        var files = new List<string>();
+        string? password = null;
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            string a = args[i];
+            if (a.Equals("--password", StringComparison.OrdinalIgnoreCase) || a.Equals("-p", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 < args.Length)
+                    password = args[++i];
+            }
+            else if (a.StartsWith("--password=", StringComparison.OrdinalIgnoreCase))
+            {
+                password = a["--password=".Length..];
+            }
+            else if (a.StartsWith("-p=", StringComparison.OrdinalIgnoreCase))
+            {
+                password = a["-p=".Length..];
+            }
+            else if (a.StartsWith('-') || a.StartsWith('/'))
+            {
+                // Unknown switch — ignore. (Windows file paths never start with '-' or '/'.)
+            }
+            else
+            {
+                files.Add(a);
+            }
+        }
+
+        return (files.ToArray(), string.IsNullOrEmpty(password) ? null : password);
+    }
+
+    private void RunHeadless(string[] files, string? cliPassword)
     {
         var settings = new SettingsStore(BaseDir);
-        if (!settings.HasPassword)
+        string? password = ResolvePassword(settings, cliPassword);
+        if (password is null)
         {
-            MessageBox.Show(
-                "No password is set yet.\n\nOpen FileLock once to set your password, then try again.",
-                "FileLock", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // No password available (e.g. the first-run prompt was cancelled) — do nothing.
             Shutdown();
             return;
         }
 
-        string password = settings.GetPassword();
         var service = new LockToggleService(BaseDir);
 
         int locked = 0, unlocked = 0;
@@ -91,6 +128,46 @@ public partial class App : Application
 
         string message = Summarize(files.Length, locked, unlocked, failures, last);
         ShowBalloonAndExit(message, isError: failures.Count > 0);
+    }
+
+    /// <summary>
+    /// Decides which password to use for a headless run:
+    /// <list type="bullet">
+    /// <item>A <c>--password</c> value is used for this run; if no default is stored yet, it is
+    /// also saved as the default ("save if not set yet").</item>
+    /// <item>Otherwise the stored default is used.</item>
+    /// <item>On first run (no default, no <c>--password</c>) the user is prompted; the entered
+    /// value is saved as the default and used. Returns <c>null</c> if the prompt is cancelled.</item>
+    /// </list>
+    /// </summary>
+    private static string? ResolvePassword(SettingsStore settings, string? cliPassword)
+    {
+        if (!string.IsNullOrEmpty(cliPassword))
+        {
+            if (!settings.HasPassword)
+                TrySave(settings, cliPassword);
+            return cliPassword;
+        }
+
+        if (settings.HasPassword)
+            return settings.GetPassword();
+
+        // First run: no default and nothing passed → ask, save, then proceed.
+        var dialog = new PasswordPromptWindow();
+        if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.Password))
+        {
+            TrySave(settings, dialog.Password);
+            return dialog.Password;
+        }
+        return null;
+    }
+
+    /// <summary>Persists the default password, ignoring write failures — the value still works
+    /// for this run, and any unwritable-folder problem surfaces per-file when locking.</summary>
+    private static void TrySave(SettingsStore settings, string password)
+    {
+        try { settings.SetPassword(password); }
+        catch { /* best effort; locking will report a writability problem if there is one */ }
     }
 
     // ── Result reporting ───────────────────────────────────────────────────────────

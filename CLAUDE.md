@@ -15,6 +15,12 @@ Before locking, the original is copied into a `.backup` folder and recorded in a
 Running the exe with **no args** opens a small settings window (set the password, open the
 backup folder). Results of a shortcut drop are reported via a tray-balloon notification.
 
+The default password is **not preset**: on the first shortcut drop with no password saved,
+the user is prompted for one (it is saved, then the drop proceeds). A password can also be
+passed on the command line — `FileLock.exe --password <pw> <files…>` (also `-p`,
+`--password=<pw>`) — which is used for that run and saved as the default if none exists yet
+(`App.ParseArgs` / `App.ResolvePassword`). Note a CLI password is visible to other processes.
+
 ## Architecture
 
 ```

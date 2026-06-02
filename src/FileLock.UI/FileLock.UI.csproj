@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0-windows;net11.0-windows</TargetFrameworks>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <!-- WinForms is enabled only for the tray-balloon NotifyIcon (no NuGet needed). -->
     <UseWindowsForms>true</UseWindowsForms>

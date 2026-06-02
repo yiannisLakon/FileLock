@@ -5,7 +5,7 @@ Guidance for AI agents working in this repository.
 ## What this is
 
 **FileLock** — a Windows desktop app that locks (encrypts) and unlocks (decrypts) files
-with a password, for non-technical users. **.NET 11**, WPF, C# (latest language version).
+with a password, for non-technical users. **.NET 10**, WPF, C# (latest language version).
 
 The primary workflow is **drop files onto a desktop shortcut**: Windows hands the paths to
 `FileLock.exe` as command-line args, and the app toggles each file **in place** using a
@@ -25,7 +25,7 @@ passed on the command line — `FileLock.exe --password <pw> <files…>` (also `
 
 ```
 FileLock.sln
-global.json                # pins the .NET SDK (currently an 11.0 preview)
+global.json                # pins the .NET SDK (.NET 10)
 Directory.Build.props      # shared MSBuild settings for every project
 Directory.Packages.props   # Central Package Management — all NuGet versions live here
 src/FileLock.Core/         # crypto core — class library, NO UI deps, BCL only
@@ -58,12 +58,10 @@ dotnet test  FileLock.sln          # all tests must pass before any change is "d
 dotnet run --project src/FileLock.UI/FileLock.UI.csproj   # launch the app
 ```
 
-Targets `net11.0` (Core/Tests) and `net11.0-windows` (UI). The SDK is pinned in
-`global.json` to a .NET 11 preview. If the `dotnet` on PATH is older, it will refuse with a
-"version required" message — invoke a .NET 11 SDK explicitly, e.g.
-`& "C:\Users\<you>\dotnet-preview\dotnet.exe" build FileLock.sln` (set `DOTNET_ROOT` to
-that folder so the WindowsDesktop runtime resolves when running the WPF app). Do not lower
-`TargetFramework` to make an older SDK work.
+Targets `net10.0` (Core/Tests) and `net10.0-windows` (UI). The SDK is pinned in
+`global.json` to .NET 10. If the `dotnet` on PATH is older, it will refuse with a
+"version required" message — install the .NET 10 SDK (the WindowsDesktop runtime is needed
+to run the WPF app). Do not lower `TargetFramework` to make an older SDK work.
 
 ## Crypto invariants — DO NOT BREAK
 

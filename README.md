@@ -53,7 +53,7 @@ it without breaking files locked today. See `FileFormat.cs` for the exact on-dis
 
 ## Tech stack
 
-- **.NET 11**, WPF, C# (latest language version).
+- **.NET 10**, WPF, C# (latest language version).
 - Crypto hot paths avoid heap churn: small secrets (salt/nonce/tag/key) and the variable
   header use `stackalloc`, large plaintext/ciphertext buffers come from `ArrayPool<byte>`
   (and are zeroed before return), the file is read straight into the payload buffer via
@@ -80,8 +80,8 @@ tests/
 
 ## Build & test
 
-Requires the **.NET 11 SDK** (currently a preview release; `global.json` pins the exact
-version). The Windows Desktop runtime is needed to run the WPF app.
+Requires the **.NET 10 SDK** (`global.json` pins the exact version). The Windows Desktop
+runtime is needed to run the WPF app.
 
 ```powershell
 dotnet build FileLock.sln
@@ -89,10 +89,10 @@ dotnet test  FileLock.sln
 ```
 
 If `dotnet` on your PATH is an older SDK, it will report that the version in `global.json`
-is required — install the .NET 11 SDK, or point at an existing install, e.g.:
+is required — install the .NET 10 SDK, or point at an existing install, e.g.:
 
 ```powershell
-& "C:\path\to\dotnet11\dotnet.exe" build FileLock.sln
+& "C:\path\to\dotnet10\dotnet.exe" build FileLock.sln
 ```
 
 ## Run
@@ -104,7 +104,7 @@ dotnet run --project src/FileLock.UI/FileLock.UI.csproj
 Or launch the built executable directly:
 
 ```
-src/FileLock.UI/bin/Debug/net11.0-windows/FileLock.exe
+src/FileLock.UI/bin/Debug/net10.0-windows/FileLock.exe
 ```
 
 ## Usage

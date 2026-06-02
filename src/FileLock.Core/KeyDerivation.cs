@@ -20,8 +20,7 @@ public static class KeyDerivation
         int iterations,
         Span<byte> destination)
     {
-        if (iterations <= 0)
-            throw new ArgumentOutOfRangeException(nameof(iterations));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(iterations);
 
         Rfc2898DeriveBytes.Pbkdf2(password, salt, destination, iterations, HashAlgorithmName.SHA256);
     }

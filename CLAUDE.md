@@ -36,7 +36,7 @@ Key files:
 - `src/FileLock.Core/FileFormat.cs` — on-disk layout + constants (single source of truth)
 - `src/FileLock.Core/FileCryptor.cs` — `Lock`/`Unlock`, `LockInPlace`/`UnlockInPlace`, `IsLocked`, `ReadHeaderInfo`
 - `src/FileLock.Core/LockToggleService.cs` — the toggle orchestrator (detect → back up → lock/unlock in place → ledger)
-- `src/FileLock.Core/BackupStore.cs` — `.backup` folder + `ledger.jsonl` (hashed backup names)
+- `src/FileLock.Core/BackupStore.cs` — `.backup` folder + `ledger.jsonl` (timestamp-prefixed backup names)
 - `src/FileLock.Core/LedgerEntry.cs` / `LockedFileInfo.cs` — ledger record (+ STJ source-gen) / header peek result
 - `src/FileLock.Core/KeyDerivation.cs` — PBKDF2 wrapper (span-based, writes into a destination)
 - `src/FileLock.Core/Exceptions.cs` — `BadFormatException`, `WrongPasswordException`, `FileTooLargeException`

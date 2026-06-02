@@ -86,6 +86,18 @@ public sealed class LockToggleServiceTests : IDisposable
     }
 
     [Fact]
+    public void Process_Backup_IsNamedWithTimestampPrefixAndOriginalName()
+    {
+        string file = Write("report.pdf", RandomBytes(256));
+
+        _service.Process(file, "pw");
+
+        string backupName = Path.GetFileName(BackupFiles().Single());
+        // "[yyyy-MM-dd HH-mm-ss] " prefix, then the verbatim original file name.
+        Assert.Matches(@"^\[\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}\] report\.pdf$", backupName);
+    }
+
+    [Fact]
     public void Process_LockedFile_UnlocksInPlace_WithNoNewBackup()
     {
         byte[] original = RandomBytes(2048);

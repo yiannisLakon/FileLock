@@ -15,8 +15,9 @@ users — no crypto jargon in the UI.
   file's header — **the name and extension never change**.
 - Files are replaced **in place**. Before locking, a copy of the original is saved to a
   `.backup` folder next to the app, and a line is written to `.backup/ledger.jsonl` recording
-  the original name, source path, date, and who locked it. (Backup-folder name clashes are
-  avoided by appending a random token to the backup file; the real name lives in the ledger.)
+  the original name, source path, date, and who locked it. (Backups are named with a local
+  timestamp prefix — e.g. `[2026-06-02 14-30-05] report.pdf` — so the folder stays readable and
+  sorts by date; the real name is kept too, and the ledger records it as well.)
 - A locked file's header also stores the **user name of whoever locked it** (tamper-evident),
   so you can tell who locked a file later.
 - Results of a shortcut drop pop up as a **tray notification**. Running the app with no file

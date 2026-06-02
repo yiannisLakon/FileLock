@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -28,32 +27,42 @@ public sealed class BackupStore
     public string LedgerPath => _ledgerPath;
 
     /// <summary>
-    /// Copies <paramref name="sourcePath"/> into the backup folder under a unique name formed
-    /// by appending a random token to the original stem (e.g. <c>report.3f9a…b2.pdf</c>) and
-    /// returns that backup file name. The true original name belongs in the ledger, not here.
+    /// Copies <paramref name="sourcePath"/> into the backup folder under a name prefixed with the
+    /// local timestamp of the backup (e.g. <c>[2026-06-02 14-30-05] report.pdf</c>) and returns
+    /// that backup file name. The original name/extension is preserved verbatim so the backup
+    /// folder is browsable; the date-first prefix also sorts the folder chronologically. The
+    /// ledger still records the true original name (the prefix is decoration, not parsed back).
     /// </summary>
     public string BackUp(string sourcePath)
     {
         ArgumentException.ThrowIfNullOrEmpty(sourcePath);
         Directory.CreateDirectory(_backupDir);
 
+        string fileName = Path.GetFileName(sourcePath);
         string stem = Path.GetFileNameWithoutExtension(sourcePath);
         string ext = Path.GetExtension(sourcePath);
+        // Local time on purpose — this is a human-facing label. ':' is illegal in Windows file
+        // names, so the time uses '-' separators. The ledger keeps the precise UTC lock date.
+        string prefix = $"[{DateTime.Now:yyyy-MM-dd HH-mm-ss}] ";
 
-        for (int attempt = 0; attempt < 1000; attempt++)
+        // Second-resolution timestamps make a clash astronomically unlikely, but two same-named
+        // files dropped together can land in the same second — fall back to a " (1)", " (2)", …
+        // counter (matching FileCryptor.GetAvailablePath's convention).
+        for (int counter = 0; counter < 1000; counter++)
         {
-            string token = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)); // 64-bit, 16 hex chars
-            string backupName = $"{stem}.{token}{ext}";
+            string backupName = counter == 0
+                ? $"{prefix}{fileName}"
+                : $"{prefix}{stem} ({counter}){ext}";
             string dest = Path.Combine(_backupDir, backupName);
             try
             {
-                // overwrite: false → throws if the (random) name is somehow taken, so we retry.
+                // overwrite: false → throws if the name is taken, so we bump the counter and retry.
                 File.Copy(sourcePath, dest, overwrite: false);
                 return backupName;
             }
             catch (IOException) when (File.Exists(dest))
             {
-                // Name clash (astronomically unlikely) — pick a new token and try again.
+                // Name clash within the same second — try the next counter.
             }
         }
         throw new IOException("Could not create a unique backup file name.");
